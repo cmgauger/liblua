@@ -27,14 +27,17 @@
 
 # Project-wide settings
 debug ?= 0
-NAME := libdatastore
+NAME := liblua
 BUILD_DIR := build
 INCLUDE_DIR := include
 LIB_DIR := lib
 SRC_DIR := src
 
+vpath %.c $(SRC_DIR)
+
 # object file paths
-OBJS := $(patsubst %.c,%.o,$(wildcard $(SRC_DIR)/*.c))
+OBJS := $(addprefix $(BUILD_DIR)/, $(patsubst %.c, %.o, \
+	$(notdir $(wildcard $(SRC_DIR)/*.c))))
 
 # Compilers & Utilities
 CC := gcc
@@ -44,11 +47,11 @@ RM := rm -rf
 # General flag settings
 #   CFLAGS
 #     -std=c99: use ISO C99 standard
-#     -fPIC: compile as position-indepdent code
+#     -fPIC: compile as position-independent code
 #   CPPFLAGS
-#     -D_LIB: 
+#     -D_LIB
 #   ARFLAGS
-#     rcs
+#     rcs: create the library and its symbol table, all in one go
 CFLAGS := -std=c99 -fPIC
 CPPFLAGS := -I$(INCLUDE_DIR)/ -D_LIB
 ARFLAGS := rcs
@@ -60,7 +63,7 @@ ARFLAGS := rcs
 #     -g: include debugging symbols
 #     -O0: no optimizations
 #   CPPFLAGS
-#     -D_DEBUG: 
+#     -D_DEBUG
 #
 #     Release Builds
 #     ==============
@@ -73,7 +76,7 @@ else
 	CFLAGS += -Ofast
 endif
 
-.PHONY: clean dir
+.PHONY: all clean
 
 all: $(NAME)
 
@@ -81,14 +84,12 @@ clean:
 	$(RM) $(BUILD_DIR)
 	$(RM) $(LIB_DIR)
 
-dir:
-	mkdir -p $(BUILD_DIR)
-	mkdir -p $(LIB_DIR)
+$(LIB_DIR) : ; mkdir -p $(LIB_DIR)
 
-$(NAME): dir $(OBJS)
-	$(AR) $(ARFLAGS) $(patsubst %,$(LIB_DIR)/%.a,$@) \
-	$(patsubst %,build/%,$(OBJS))
+$(BUILD_DIR) : ; mkdir -p $(BUILD_DIR)
 
-$(OBJS): dir
-	mkdir -p $(BUILD_DIR)/$(@D)
-	$(CC) $*.c $(CPPFLAGS) $(CFLAGS) -c -o $(BUILD_DIR)/$@
+$(NAME): $(OBJS) | $(LIB_DIR)
+	$(AR) $(ARFLAGS) $(patsubst %.o, $(LIB_DIR)/%.a, $(notdir $<)) $<
+
+$(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
+	$(CC) -o $@ -c $< $(CPPFLAGS) $(CFLAGS)

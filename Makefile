@@ -89,7 +89,7 @@ $(LIB_DIR) : ; mkdir -p $(LIB_DIR)
 $(BUILD_DIR) : ; mkdir -p $(BUILD_DIR)
 
 $(NAME): $(OBJS) | $(LIB_DIR)
-	$(AR) $(ARFLAGS) $(patsubst %.o, $(LIB_DIR)/%.a, $(notdir $<)) $<
+	$(AR) $(ARFLAGS) $(addprefix $(LIB_DIR)/, $(addsuffix .a, $@)) $^
 
 $(BUILD_DIR)/%.o : %.c | $(BUILD_DIR)
 	$(CC) -o $@ -c $< $(CPPFLAGS) $(CFLAGS)
